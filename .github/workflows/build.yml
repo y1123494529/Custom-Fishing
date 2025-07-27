@@ -1,4 +1,4 @@
-name: Build CustomFishing (JDK 17)
+name: Build CustomFishing (JDK 17 + 21)
 
 on:
   push:
@@ -8,30 +8,51 @@ on:
 
 jobs:
   build:
-    name: Build with Gradle (JDK 17)
+    name: Build with Gradle (JDK 17 + 21)
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 安装 JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'gradle'
+      
+      # 安装 JDK 21
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
 
       - name: Make Gradle Wrapper executable
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build --info
-
-      - name: List build directory (debug)
+      # 使用JDK 17编译核心代码
+      - name: Build with JDK 17 (Core)
         run: |
-          ls -lR build/
-          ls -lR target/ || echo "No target directory"
+          export JAVA_HOME=$JAVA_HOME_17_X64
+          ./gradlew build -Dorg.gradle.java.home=$JAVA_HOME_17_X64
+
+      # 使用JDK 21编译其他模块
+      - name: Build with JDK 21 (Modules)
+        run: |
+          export JAVA_HOME=$JAVA_HOME_21_X64
+          ./gradlew build -Dorg.gradle.java.home=$JAVA_HOME_21_X64
+
+      # 检查构建输出
+      - name: List build outputs
+        run: |
+          echo "Build output:"
+          ls -l build/libs/
+          echo "Jar contents:"
+          unzip -l build/libs/*.jar || echo "No jar found"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
