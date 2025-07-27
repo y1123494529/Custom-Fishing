@@ -1,0 +1,38 @@
+name: Build CustomFishing (JDK 17)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build with Gradle (JDK 17)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'  # 推荐使用 Temurin（Adoptium）
+          cache: 'gradle'          # 启用 Gradle 依赖缓存
+
+      - name: Make Gradle Wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CustomFishing-Plugin
+          path: |
+            build/libs/*.jar       # Gradle 默认输出路径
+            target/*.jar           # 插件文档提到的路径（如有）
+          if-no-files-found: error # 如果没有文件则报错
